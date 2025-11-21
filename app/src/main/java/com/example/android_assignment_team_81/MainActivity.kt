@@ -10,6 +10,8 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import android.widget.Spinner
+import android.widget.Toast
 
 class MainActivity : AppCompatActivity() {
 
@@ -19,12 +21,14 @@ class MainActivity : AppCompatActivity() {
     private var btnSave: Button? = null
     private var listContacts: ListView? = null
 
-    private var contactDao: ContactDao? = null
+    private lateinit var contactDao: ContactDao
 
     private val contactStrings = mutableListOf<String>()
     private var contactsAdapter: ArrayAdapter<String>? = null
 
     private var currentContacts: List<Contact> = emptyList()
+
+    private lateinit var categorySpinner: Spinner
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -74,7 +78,7 @@ class MainActivity : AppCompatActivity() {
             category = category
         )
 
-        // Insert using Room in background thread
+
         lifecycleScope.launch(Dispatchers.IO) {
             val dao = contactDao
             if (dao != null) {
@@ -104,4 +108,25 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+    private fun loadCategories() {
+        lifecycleScope.launch {
+            contactDao.getAllCategories().collect { categories ->
+                runOnUiThread {
+                    val categoryList = mutableListOf("Select Category")
+                    categoryList.addAll(categories)
+
+                    val adapter = ArrayAdapter(
+                        this@MainActivity,
+                        android.R.layout.simple_spinner_item,
+                        categoryList
+                    )
+                    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                    categorySpinner.adapter = adapter
+                }
+            }
+        }
+    }
+
+
 }
