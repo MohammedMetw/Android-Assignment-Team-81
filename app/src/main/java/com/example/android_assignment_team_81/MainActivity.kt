@@ -161,6 +161,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+
     private fun displayContacts(contacts: List<Contact>) {
         currentContacts = contacts
         val toDisplay = contacts.map { "${it.name} - ${it.category}" }
