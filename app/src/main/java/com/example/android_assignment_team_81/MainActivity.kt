@@ -9,7 +9,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import android.widget.Spinner
 import android.widget.Toast
 import android.content.Intent
@@ -66,6 +65,14 @@ class MainActivity : AppCompatActivity() {
             saveContact()
         }
 
+
+        listContacts?.setOnItemClickListener { _, _, position, _ ->
+            if (position < currentContacts.size) {
+                val contact = currentContacts[position]
+                openDialer(contact.phone)
+            }
+        }
+
         btnFilter.setOnClickListener {
             filterByCategory()
         }
@@ -83,7 +90,7 @@ class MainActivity : AppCompatActivity() {
     private fun saveContact() {
         val name = etName?.text?.toString()?.trim() ?: ""
         val phone = etPhone?.text?.toString()?.trim() ?: ""
-        val category = etCategory?.text?.toString()?.trim() ?: ""
+        val category = etCategory?.text?.toString()?.trim()?.lowercase() ?: ""
 
         // param validation
         if (name.isEmpty() || phone.isEmpty() || category.isEmpty()) {
@@ -164,8 +171,12 @@ class MainActivity : AppCompatActivity() {
             contactsAdapter?.notifyDataSetChanged()
         }
     }
+
+    private fun openDialer(phoneNumber: String) {
+        val intent = Intent(Intent.ACTION_DIAL).apply {
+            data = Uri.parse("tel:$phoneNumber")
+        }
+        startActivity(intent)
+
+    }
 }
-
-
-
-
