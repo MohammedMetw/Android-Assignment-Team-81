@@ -12,6 +12,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import android.widget.Spinner
 import android.widget.Toast
+import android.content.Intent
+import android.net.Uri
 
 class MainActivity : AppCompatActivity() {
 
@@ -41,6 +43,12 @@ class MainActivity : AppCompatActivity() {
         btnSave = findViewById(R.id.btnSave)
         listContacts = findViewById(R.id.listContacts)
 
+
+        categorySpinner = findViewById(R.id.spinnerCategories)
+
+        val btnFilter: Button = findViewById(R.id.btnFilter)
+        val btnShowAll: Button = findViewById(R.id.btnShowAll)
+
         // Room
         val db = ContactDatabase.getDatabase(this)
         contactDao = db.contactDao()
@@ -58,8 +66,18 @@ class MainActivity : AppCompatActivity() {
             saveContact()
         }
 
+        btnFilter.setOnClickListener {
+            filterByCategory()
+        }
+
+        btnShowAll.setOnClickListener {
+            observeAllContacts()
+        }
+
+
         // observe all contacts and update UI
         observeAllContacts()
+        loadCategories()
     }
 
     private fun saveContact() {
@@ -92,19 +110,11 @@ class MainActivity : AppCompatActivity() {
         etCategory?.text?.clear()
     }
 
+
     private fun observeAllContacts() {
-        val dao = contactDao ?: return
-
         lifecycleScope.launch(Dispatchers.IO) {
-            dao.getAllContacts().collect { contacts ->
-                currentContacts = contacts
-                val toDisplay = contacts.map { it.name + " - " + it.category }
-
-                withContext(Dispatchers.Main) {
-                    contactStrings.clear()
-                    contactStrings.addAll(toDisplay)
-                    contactsAdapter?.notifyDataSetChanged()
-                }
+            contactDao.getAllContacts().collect { contacts ->
+                displayContacts(contacts)
             }
         }
     }
@@ -128,5 +138,34 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun filterByCategory() {
+        val selectedCategory = categorySpinner.selectedItem as? String
+        if (selectedCategory == null || selectedCategory == "Select Category") {
+            Toast.makeText(this, "Please select a category", Toast.LENGTH_SHORT).show()
+            return
+        }
 
+        lifecycleScope.launch {
+            contactDao.getContactsByCategory(selectedCategory).collect { contacts ->
+                runOnUiThread {
+                    displayContacts(contacts)
+                }
+            }
+        }
+    }
+
+    private fun displayContacts(contacts: List<Contact>) {
+        currentContacts = contacts
+        val toDisplay = contacts.map { "${it.name} - ${it.category}" }
+
+        runOnUiThread {
+            contactStrings.clear()
+            contactStrings.addAll(toDisplay)
+            contactsAdapter?.notifyDataSetChanged()
+        }
+    }
 }
+
+
+
+
